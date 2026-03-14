@@ -1,0 +1,31 @@
+{
+  "name": "ai-social-media-manager",
+  "version": "1.0.0",
+  "description": "Autonomous AI-powered social media content manager for Facebook and Instagram",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "jest"
+  },
+  "keywords": [
+    "ai",
+    "social-media",
+    "automation",
+    "facebook",
+    "instagram",
+    "gemini"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "axios": "^1.7.9",
+    "dotenv": "^16.4.7",
+    "node-cron": "^3.0.3",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "fast-check": "^4.6.0",
+    "jest": "^29.7.0"
+  }
+}
