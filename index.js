@@ -22,15 +22,17 @@ const { nightlyAnalysisPhase, executionPhase, analyticsSyncPhase, runNow } = req
 /**
  * Validate critical environment variables
  * Requirements: 11.2, 11.4
+ * @returns {boolean} True if all critical variables are set
  */
 function validateEnvironment() {
+    let allSet = true;
     console.log('→ Validating environment configuration...');
 
     // Critical: GEMINI_API_KEY is required
     if (!process.env.GEMINI_API_KEY) {
         console.error('✗ GEMINI_API_KEY environment variable is required');
         console.error('  Please set GEMINI_API_KEY in your .env file');
-        process.exit(1);
+        allSet = false;
     }
 
     // Optional: Meta API credentials (warn if missing)
@@ -47,6 +49,7 @@ function validateEnvironment() {
     }
 
     console.log('✓ Environment validation complete');
+    return allSet;
 }
 
 /**
@@ -63,13 +66,13 @@ function registerCronJobs() {
     console.log('✓ Registered: Nightly Analysis Phase at 11:30 PM (30 23 * * *)');
 
     // Execution Phase: 11:35 PM daily
-    cron.schedule('55 18 * * *', () => {
+    cron.schedule('35 23 * * *', () => {
         executionPhase();
     });
     console.log('✓ Registered: Execution Phase at 11:35 PM (35 23 * * *)');
 
     // Analytics Sync Phase: 11:00 PM daily
-    cron.schedule('10 18 * * *', () => {
+    cron.schedule('0 23 * * *', () => {
         analyticsSyncPhase();
     });
     console.log('✓ Registered: Analytics Sync Phase at 11:00 PM (0 23 * * *)');
@@ -104,6 +107,68 @@ function setupGracefulShutdown() {
 }
 
 /**
+ * Check and run the first post on startup
+ * Ensures at least one post is published or planned for today.
+ */
+async function checkAndRunStartupPost() {
+    console.log('→ Checking if startup post is needed...');
+    let db;
+    try {
+        const { getDatabase } = require('./db');
+        db = getDatabase();
+    } catch (e) {
+        console.warn('⚠ Database not initialized. Skipping startup post check.');
+        return;
+    }
+
+    if (!db) {
+        console.warn('⚠ Database connection unavailable. Skipping startup post check.');
+        return;
+    }
+
+    // Calculate local today string
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
+
+    return new Promise((resolve, reject) => {
+        db.get(
+            `SELECT * FROM post_history WHERE target_date = ? AND status != 'failed' ORDER BY id DESC LIMIT 1`,
+            [todayStr],
+            async (err, row) => {
+                if (err) {
+                    console.error("✗ Error checking today's posts:", err.message);
+                    return resolve(); // Don't crash, just proceed
+                }
+
+                if (row && row.status === 'published') {
+                    console.log(`✓ Post already published today (ID: ${row.id}). Skipping startup post.`);
+                    resolve();
+                } else if (row && row.status === 'planned') {
+                    console.log(`→ Found planned post for today (ID: ${row.id}). Executing publish phase immediately...`);
+                    try {
+                        await executionPhase();
+                    } catch (e) {
+                        console.error('✗ Startup execution failed:', e.message);
+                    }
+                    resolve();
+                } else {
+                    console.log('→ No valid post found for today. Generating and publishing immediately...');
+                    try {
+                        await runNow();
+                    } catch (e) {
+                        console.error('✗ Startup runNow failed:', e.message);
+                    }
+                    resolve();
+                }
+            }
+        );
+    });
+}
+
+/**
  * Main application initialization
  */
 async function main() {
@@ -115,7 +180,10 @@ async function main() {
 
     try {
         // Step 1: Load and validate environment configuration
-        validateEnvironment();
+        if (!validateEnvironment()) {
+            process.exit(1);
+            return;
+        }
         console.log('');
 
         // Step 2: Initialize database
@@ -129,8 +197,12 @@ async function main() {
         // Step 4: Register cron jobs for daily workflow
         registerCronJobs();
         console.log('');
+        
+        // Step 5: Check and trigger immediate post if needed
+        await checkAndRunStartupPost();
+        console.log('');
 
-        // Step 5: Setup graceful shutdown
+        // Step 6: Setup graceful shutdown
         setupGracefulShutdown();
 
         console.log('═══════════════════════════════════════════════════════════');
@@ -189,7 +261,9 @@ async function runPhaseNow() {
     console.log('');
 
     try {
-        validateEnvironment();
+        if (!validateEnvironment()) {
+            process.exit(1);
+        }
         await initializeDatabase();
         initializeGemini();
         await phase.fn();
@@ -211,6 +285,8 @@ async function runPhaseNow() {
 // Start the application
 if (process.argv.includes('--run')) {
     runPhaseNow();
-} else {
+} else if (process.env.NODE_ENV !== 'test') {
     main();
 }
+
+module.exports = { main, checkAndRunStartupPost };
