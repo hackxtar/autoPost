@@ -42,6 +42,7 @@ async function publishToFacebook(caption) {
 
     } catch (error) {
         console.error('✗ Facebook publish failed:', error.response?.data?.error?.message || error.message);
+        console.error(error.stack);
         throw error;
     }
 }
@@ -51,6 +52,18 @@ async function publishToFacebook(caption) {
  * Returns a skipped marker so callers don't crash.
  */
 async function publishToInstagram(format, caption) {
+    console.log(`→ Publishing ${format} to Instagram...`);
+
+    const accessToken = process.env.FB_PAGE_ACCESS_TOKEN;
+    const igBusinessId = process.env.IG_BUSINESS_ID;
+
+    if (!accessToken || !igBusinessId) {
+        console.warn('⚠ FB_PAGE_ACCESS_TOKEN or IG_BUSINESS_ID not configured — simulating publish');
+        const simulatedId = `simulated_ig_${Date.now()}`;
+        console.log(`✓ Simulated Instagram publish - ID: ${simulatedId}`);
+        return { id: simulatedId };
+    }
+
     console.warn('⚠ Instagram publishing is disabled (text-only mode — no media available)');
     return { id: 'skipped_instagram_no_media' };
 }
@@ -98,8 +111,37 @@ async function getPostMetrics(postId, platform) {
 
     } catch (error) {
         console.error(`✗ Metrics retrieval failed for post ${postId}:`, error.message);
+        console.error(error.stack);
         return { likes: 0, reach: 0 };
     }
 }
 
-module.exports = { publishToFacebook, publishToInstagram, getPostMetrics };
+/**
+ * Synchronize performance metrics for recent posts.
+ */
+async function syncRecentMetrics(getRecentPosts, updateMetrics) {
+    const accessToken = process.env.FB_PAGE_ACCESS_TOKEN;
+
+    if (!accessToken) {
+        console.warn('⚠ FB_PAGE_ACCESS_TOKEN not configured — skipping metrics sync');
+        return;
+    }
+
+    try {
+        const posts = await getRecentPosts();
+        for (const post of posts) {
+            const metrics = await getPostMetrics(post.post_id, post.platform);
+            await updateMetrics(post.id, metrics.likes, metrics.reach);
+        }
+    } catch (error) {
+        console.error('✗ Metrics sync failed:', error.message);
+        console.error(error.stack);
+    }
+}
+
+module.exports = { 
+    publishToFacebook, 
+    publishToInstagram, 
+    getPostMetrics,
+    syncRecentMetrics
+};

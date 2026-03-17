@@ -19,7 +19,7 @@ function initializeGemini() {
         throw new Error('GEMINI_API_KEY environment variable is required');
     }
     
-    const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+    const modelName = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
     genAI = new GoogleGenerativeAI(apiKey);
     model = genAI.getGenerativeModel({ model: modelName }, { apiVersion: 'v1' });
     
