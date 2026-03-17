@@ -13,7 +13,7 @@ const { nightlyAnalysisPhase, executionPhase, analyticsSyncPhase, runNow } = req
  * 
  * Daily Workflow:
  * - 11:30 PM: Nightly Analysis Phase (analyze historical data, plan tomorrow's content)
- * - 10:00 AM: Execution Phase (generate media, publish content)
+ * - 11:35 PM: Execution Phase (generate media, publish content)
  * - 11:00 PM: Analytics Sync Phase (retrieve and update performance metrics)
  * 
  * Requirements: 1.1, 1.5, 10.1, 10.2, 10.3, 10.4, 11.1, 11.2, 11.4, 12.1
@@ -62,11 +62,11 @@ function registerCronJobs() {
     });
     console.log('✓ Registered: Nightly Analysis Phase at 11:30 PM (30 23 * * *)');
     
-    // Execution Phase: 10:00 AM daily
-    cron.schedule('0 10 * * *', () => {
+    // Execution Phase: 11:35 PM daily
+    cron.schedule('35 23 * * *', () => {
         executionPhase();
     });
-    console.log('✓ Registered: Execution Phase at 10:00 AM (0 10 * * *)');
+    console.log('✓ Registered: Execution Phase at 11:35 PM (35 23 * * *)');
     
     // Analytics Sync Phase: 11:00 PM daily
     cron.schedule('0 23 * * *', () => {
@@ -139,7 +139,7 @@ async function main() {
         console.log('');
         console.log('Scheduled Tasks:');
         console.log('  • Nightly Analysis: 11:30 PM daily');
-        console.log('  • Content Execution: 10:00 AM daily');
+        console.log('  • Content Execution: 11:35 PM daily');
         console.log('  • Analytics Sync: 11:00 PM daily');
         console.log('');
         console.log('Press Ctrl+C to stop the application');

@@ -11,6 +11,16 @@ jest.mock('../services/aiService');
 jest.mock('../services/mediaService');
 jest.mock('../services/metaService');
 
+/**
+ * Utility to get local YYYY-MM-DD string
+ */
+function getLocalDateString(date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 describe('Daily Manager - Property Tests', () => {
     
     beforeEach(() => {
@@ -48,7 +58,7 @@ describe('Daily Manager - Property Tests', () => {
                     media_prompt: fc.string({ minLength: 1, maxLength: 100 }),
                     platform: fc.constantFrom('facebook', 'instagram', 'both'),
                     topic: fc.string({ minLength: 1, maxLength: 50 }),
-                    target_date: fc.date().map(d => d.toISOString().split('T')[0]),
+                    target_date: fc.date().map(d => getLocalDateString(d)),
                     status: fc.constant('planned')
                 }),
                 async (plannedPost) => {
@@ -209,7 +219,7 @@ describe('Daily Manager - Property Tests', () => {
                             caption: 'Test',
                             platform: 'facebook',
                             topic: 'Test',
-                            target_date: new Date().toISOString().split('T')[0],
+                            target_date: getLocalDateString(),
                             status: 'planned'
                         });
                         mediaService.generateMedia.mockReturnValue('https://example.com/image.jpg');
@@ -318,7 +328,7 @@ describe('Daily Manager - Integration Tests', () => {
             media_prompt: 'New Prompt',
             platform: 'facebook',
             topic: 'New Topic',
-            target_date: new Date().toISOString().split('T')[0],
+            target_date: getLocalDateString(),
             status: 'planned'
         };
         
@@ -403,7 +413,7 @@ describe('Daily Manager - Integration Tests', () => {
             caption: 'Test',
             platform: 'facebook',
             topic: 'Test',
-            target_date: new Date().toISOString().split('T')[0],
+            target_date: getLocalDateString(),
             status: 'planned'
         });
         

@@ -6,6 +6,16 @@ let db = null;
 let currentDbPath = null;
 
 /**
+ * Utility to get local YYYY-MM-DD string
+ */
+function getLocalDateString(date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+/**
  * Get the database file path
  */
 function getDbPath() {
@@ -118,7 +128,7 @@ async function getHistoricalPosts(days = 7) {
         // Calculate the date N days ago
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - days);
-        const cutoffDateStr = cutoffDate.toISOString().split('T')[0];
+        const cutoffDateStr = getLocalDateString(cutoffDate);
         
         console.log(`→ Retrieving historical posts from last ${days} days (since ${cutoffDateStr})...`);
         
@@ -161,7 +171,7 @@ async function insertContentPlan(plan) {
         // Calculate tomorrow's date
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
-        const targetDate = tomorrow.toISOString().split('T')[0];
+        const targetDate = getLocalDateString(tomorrow);
         
         // Derive platform from format
         // posts and stories → 'both', reels → 'instagram'
@@ -292,7 +302,7 @@ async function getTodaysPlannedPost() {
         }
         
         // Get today's date
-        const today = new Date().toISOString().split('T')[0];
+        const today = getLocalDateString();
         
         console.log(`→ Retrieving today's planned post (${today})...`);
         
@@ -334,7 +344,7 @@ async function getRecentTopics(days = 14) {
 
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - days);
-        const cutoffDateStr = cutoffDate.toISOString().split('T')[0];
+        const cutoffDateStr = getLocalDateString(cutoffDate);
 
         const querySQL = `
             SELECT topic FROM post_history

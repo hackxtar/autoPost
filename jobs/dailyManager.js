@@ -7,9 +7,19 @@ const { publishToFacebook, publishToInstagram, getPostMetrics } = require('../se
  *
  * Three phases:
  *   11:30 PM — Nightly Analysis  : AI generates tomorrow's content plan
- *   10:00 AM — Execution         : Publish today's planned post
+ *   11:35 PM — Execution         : Publish today's planned post
  *   11:00 PM — Analytics Sync    : Pull metrics for recent posts
  */
+
+/**
+ * Utility to get local YYYY-MM-DD string
+ */
+function getLocalDateString(date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
 
 // ─── Nightly Analysis Phase ───────────────────────────────────────────────────
 
@@ -149,7 +159,7 @@ async function runNow() {
     const recentTopics = await getRecentTopics(14);
     const contentPlan = await generateContentPlan(historicalPosts, recentTopics);
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateString();
     const platform = contentPlan.format === 'reel' ? 'instagram' : 'both';
 
     const planId = await new Promise((resolve, reject) => {
@@ -171,7 +181,7 @@ async function getRecentPublishedPosts(days) {
     const db = getDatabase();
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - days);
-    const cutoffDateStr = cutoffDate.toISOString().split('T')[0];
+    const cutoffDateStr = getLocalDateString(cutoffDate);
 
     return new Promise((resolve, reject) => {
         db.all(

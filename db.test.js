@@ -3,6 +3,16 @@ const { initializeDatabase, getDatabase, closeDatabase, getHistoricalPosts, inse
 const fs = require('fs');
 const path = require('path');
 
+/**
+ * Utility to get local YYYY-MM-DD string
+ */
+function getLocalDateString(date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 // Test database path - will be unique per test
 let TEST_DB_PATH;
 
@@ -44,7 +54,7 @@ describe('Database Module - Property Tests', () => {
         await fc.assert(
             fc.asyncProperty(
                 fc.record({
-                    target_date: fc.date().map(d => d.toISOString().split('T')[0]),
+                    target_date: fc.date().map(d => getLocalDateString(d)),
                     platform: fc.constantFrom('facebook', 'instagram', 'both'),
                     format: fc.constantFrom('post', 'reel', 'story'),
                     topic: fc.string({ minLength: 1, maxLength: 100 }),
@@ -129,7 +139,7 @@ describe('Database Module - Property Tests', () => {
                         target_date: fc.integer({ min: 0, max: 365 }).map(daysAgo => {
                             const date = new Date();
                             date.setDate(date.getDate() - daysAgo);
-                            return date.toISOString().split('T')[0];
+                            return getLocalDateString(date);
                         }),
                         platform: fc.constantFrom('facebook', 'instagram', 'both'),
                         format: fc.constantFrom('post', 'reel', 'story'),
@@ -176,7 +186,7 @@ describe('Database Module - Property Tests', () => {
                     // Calculate the cutoff date (7 days ago)
                     const cutoffDate = new Date();
                     cutoffDate.setDate(cutoffDate.getDate() - 7);
-                    const cutoffDateStr = cutoffDate.toISOString().split('T')[0];
+                    const cutoffDateStr = getLocalDateString(cutoffDate);
                     
                     // Verify all results meet the criteria
                     for (const result of results) {
@@ -214,7 +224,7 @@ describe('Database Module - Property Tests', () => {
                     target_date: fc.integer({ min: 0, max: 6 }).map(daysAgo => {
                         const date = new Date();
                         date.setDate(date.getDate() - daysAgo);
-                        return date.toISOString().split('T')[0];
+                        return getLocalDateString(date);
                     }),
                     platform: fc.constantFrom('facebook', 'instagram', 'both'),
                     format: fc.constantFrom('post', 'reel', 'story'),
@@ -406,7 +416,7 @@ describe('Database Module - Property Tests', () => {
                     // Calculate expected target date (tomorrow)
                     const tomorrow = new Date();
                     tomorrow.setDate(tomorrow.getDate() + 1);
-                    const expectedTargetDate = tomorrow.toISOString().split('T')[0];
+                    const expectedTargetDate = getLocalDateString(tomorrow);
                     
                     // Insert content plan
                     const insertedId = await insertContentPlan(plan);
@@ -688,7 +698,7 @@ describe('Database Module - Unit Tests', () => {
             VALUES (?, ?, ?, ?, ?, ?)
         `;
         
-        const today = new Date().toISOString().split('T')[0];
+        const today = getLocalDateString();
         
         await new Promise((resolve, reject) => {
             db.run(insertSQL, [today, 'facebook', 'post', 'Test 1', 'Caption 1', 'published'], (err) => {
@@ -735,7 +745,7 @@ describe('Database Module - Unit Tests', () => {
         // Insert post from 5 days ago (should be included)
         const fiveDaysAgo = new Date();
         fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
-        const fiveDaysAgoStr = fiveDaysAgo.toISOString().split('T')[0];
+        const fiveDaysAgoStr = getLocalDateString(fiveDaysAgo);
         
         await new Promise((resolve, reject) => {
             db.run(insertSQL, [fiveDaysAgoStr, 'facebook', 'post', 'Recent', 'Caption', 'published'], (err) => {
@@ -747,7 +757,7 @@ describe('Database Module - Unit Tests', () => {
         // Insert post from 10 days ago (should be excluded)
         const tenDaysAgo = new Date();
         tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
-        const tenDaysAgoStr = tenDaysAgo.toISOString().split('T')[0];
+        const tenDaysAgoStr = getLocalDateString(tenDaysAgo);
         
         await new Promise((resolve, reject) => {
             db.run(insertSQL, [tenDaysAgoStr, 'facebook', 'post', 'Old', 'Caption', 'published'], (err) => {
@@ -776,7 +786,7 @@ describe('Database Module - Unit Tests', () => {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
         
-        const today = new Date().toISOString().split('T')[0];
+        const today = getLocalDateString();
         
         await new Promise((resolve, reject) => {
             db.run(insertSQL, [
