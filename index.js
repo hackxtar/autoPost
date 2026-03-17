@@ -25,27 +25,27 @@ const { nightlyAnalysisPhase, executionPhase, analyticsSyncPhase, runNow } = req
  */
 function validateEnvironment() {
     console.log('→ Validating environment configuration...');
-    
+
     // Critical: GEMINI_API_KEY is required
     if (!process.env.GEMINI_API_KEY) {
         console.error('✗ GEMINI_API_KEY environment variable is required');
         console.error('  Please set GEMINI_API_KEY in your .env file');
         process.exit(1);
     }
-    
+
     // Optional: Meta API credentials (warn if missing)
     if (!process.env.FB_PAGE_ACCESS_TOKEN) {
         console.warn('⚠ FB_PAGE_ACCESS_TOKEN not configured - Facebook publishing will be simulated');
     }
-    
+
     if (!process.env.FB_PAGE_ID) {
         console.warn('⚠ FB_PAGE_ID not configured - Facebook publishing will be simulated');
     }
-    
+
     if (!process.env.IG_BUSINESS_ID) {
         console.warn('⚠ IG_BUSINESS_ID not configured - Instagram publishing will be simulated');
     }
-    
+
     console.log('✓ Environment validation complete');
 }
 
@@ -55,25 +55,25 @@ function validateEnvironment() {
  */
 function registerCronJobs() {
     console.log('→ Registering cron jobs...');
-    
+
     // Nightly Analysis Phase: 11:30 PM daily
     cron.schedule('30 23 * * *', () => {
         nightlyAnalysisPhase();
     });
     console.log('✓ Registered: Nightly Analysis Phase at 11:30 PM (30 23 * * *)');
-    
+
     // Execution Phase: 11:35 PM daily
-    cron.schedule('35 23 * * *', () => {
+    cron.schedule('55 18 * * *', () => {
         executionPhase();
     });
     console.log('✓ Registered: Execution Phase at 11:35 PM (35 23 * * *)');
-    
+
     // Analytics Sync Phase: 11:00 PM daily
-    cron.schedule('0 23 * * *', () => {
+    cron.schedule('10 18 * * *', () => {
         analyticsSyncPhase();
     });
     console.log('✓ Registered: Analytics Sync Phase at 11:00 PM (0 23 * * *)');
-    
+
     console.log('✓ All cron jobs registered successfully');
 }
 
@@ -85,11 +85,11 @@ function setupGracefulShutdown() {
     const shutdown = async (signal) => {
         console.log('');
         console.log(`→ Received ${signal} - shutting down gracefully...`);
-        
+
         try {
             // Close database connection
             await closeDatabase();
-            
+
             console.log('✓ Shutdown complete');
             process.exit(0);
         } catch (error) {
@@ -97,7 +97,7 @@ function setupGracefulShutdown() {
             process.exit(1);
         }
     };
-    
+
     // Handle termination signals
     process.on('SIGINT', () => shutdown('SIGINT'));
     process.on('SIGTERM', () => shutdown('SIGTERM'));
@@ -112,27 +112,27 @@ async function main() {
     console.log('  AI SOCIAL MEDIA MANAGER');
     console.log('═══════════════════════════════════════════════════════════');
     console.log('');
-    
+
     try {
         // Step 1: Load and validate environment configuration
         validateEnvironment();
         console.log('');
-        
+
         // Step 2: Initialize database
         await initializeDatabase();
         console.log('');
-        
+
         // Step 3: Initialize AI service
         initializeGemini();
         console.log('');
-        
+
         // Step 4: Register cron jobs for daily workflow
         registerCronJobs();
         console.log('');
-        
+
         // Step 5: Setup graceful shutdown
         setupGracefulShutdown();
-        
+
         console.log('═══════════════════════════════════════════════════════════');
         console.log('✓ APPLICATION STARTED SUCCESSFULLY');
         console.log('═══════════════════════════════════════════════════════════');
@@ -144,10 +144,10 @@ async function main() {
         console.log('');
         console.log('Press Ctrl+C to stop the application');
         console.log('');
-        
+
         // Keep the process alive
         // The cron jobs will run in the background
-        
+
     } catch (error) {
         console.error('');
         console.error('═══════════════════════════════════════════════════════════');
